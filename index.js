@@ -38,18 +38,16 @@ app
   })
   .post(
     async (req, res, next) => {
-      let tempUrl = req.body.url_input;
-      if (tempUrl.startsWith("http://www.")) {
-        tempUrl = tempUrl.replace("http://www.", "");
-      }
-
       try {
-        await dnsPromises.lookup(tempUrl, { all: true });
+        await dnsPromises.lookup(
+          req.body.url.replace("http://www.", "").replace("https://www.", ""),
+          { all: true }
+        );
       } catch (err) {
         return res.json({ error: "invalid url" });
       }
 
-      req.newUrl = req.body.url_input;
+      req.newUrl = req.body.url;
       next();
     },
     async (req, res) => {
