@@ -10,9 +10,9 @@ const dnsPromises = dns.promises;
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors());
 
 const port = process.env.PORT || 3000;
+app.use(cors());
 app.use("/public", express.static(`${process.cwd()}/public`));
 
 mongoose.connect(process.env.MONGODB_URI);
