@@ -1,24 +1,67 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+const dns = require("node:dns");
+
 const app = express();
+const dnsPromises = dns.promises;
 
-// Basic Configuration
-const port = process.env.PORT || 3000;
-
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(cors());
 
-app.use('/public', express.static(`${process.cwd()}/public`));
+const port = process.env.PORT || 3000;
+app.use("/public", express.static(`${process.cwd()}/public`));
 
-app.get('/', function(req, res) {
-  res.sendFile(process.cwd() + '/views/index.html');
+mongoose.connect(process.env.MONGODB_URI);
+
+const urlSchema = new mongoose.Schema({
+  original_url: String,
+  short_url: Number,
+});
+const Url = mongoose.model("Url", urlSchema);
+
+app.get("/", function (req, res) {
+  res.sendFile(process.cwd() + "/views/index.html");
 });
 
-// Your first API endpoint
-app.get('/api/hello', function(req, res) {
-  res.json({ greeting: 'hello API' });
-});
+app
+  .route("/api/shorturl/:short_url?")
+  .get(async (req, res) => {
+    const result = await Url.findOne({
+      short_url: req.params.short_url,
+    }).exec();
 
-app.listen(port, function() {
+    res.redirect(result.original_url);
+  })
+  .post(
+    async (req, res, next) => {
+      let tempUrl = req.body.url_input;
+      if (tempUrl.startsWith("http://www.")) {
+        tempUrl = tempUrl.replace("http://www.", "");
+      }
+
+      try {
+        await dnsPromises.lookup(tempUrl, { all: true });
+      } catch (err) {
+        return res.json({ error: "invalid url" });
+      }
+
+      req.newUrl = req.body.url_input;
+      next();
+    },
+    async (req, res) => {
+      const url = new Url({
+        original_url: req.newUrl,
+        short_url: parseInt(Math.random() * 1000000),
+      });
+      await url.save();
+      return res.json(url);
+    }
+  );
+
+app.listen(port, function () {
   console.log(`Listening on port ${port}`);
 });
