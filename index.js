@@ -39,10 +39,7 @@ app
   .post(
     async (req, res, next) => {
       try {
-        await dnsPromises.lookup(
-          req.body.url.replace("http://www.", "").replace("https://www.", ""),
-          { all: true }
-        );
+        await dnsPromises.lookup(new URL(req.body.url).hostname);
       } catch (err) {
         return res.json({ error: "invalid url" });
       }
