@@ -16,7 +16,7 @@ describe("GET /api/shoturl/:shorturl", () => {
   test("It should redirect to an valid url", async () => {
     const response = await request(app).get("/api/shorturl/381782");
     expect(response.statusCode).toBe(302);
-    expect(response.redirect).toBe(true);
+    expect(response.redirect).toBeTruthy();
   });
 });
 
